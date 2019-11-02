@@ -104,9 +104,9 @@ def traceback_table(table, length):
     best_prob = 0
     #find the best rule
     for item in table[0][length-1]:
-        if item.rule.root == 'S' and item.rule.prob > best_prob:
+        if item.rule.root == 'S' and item.prob > best_prob:
             best_tbrule = item 
-            best_prob = item.rule.prob
+            best_prob = item.prob
     if best_tbrule == None:
         raise "No available tree for this sentence"
     output = print_tree(best_tbrule, table)
@@ -155,12 +155,16 @@ with open('TestingRaw.txt', 'r') as f:
         else:
             table, length = CKY(line, grammer_list)
             tree = traceback_table(table, length)
+        print(tree)
         pred_results.append(tree)
 
 with open('TestingTree.txt', 'r') as f:
     truetrees = f.readlines()
-    for i, item in enumerate(pred_results):
+    for i, item in enumerate(truetrees):
+        item = item.strip()
         if pred_results[i] == item:
             print(True)
+        else:
+            print(False)
         
     
