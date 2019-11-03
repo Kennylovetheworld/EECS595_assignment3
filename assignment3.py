@@ -2,6 +2,10 @@ import pickle
 import nltk
 from nltk import word_tokenize
 
+with open('Vocabulary.txt', 'r') as f:
+    voca_file = f.read()
+    VOCABULARY = word_tokenize(voca_file)
+
 def CNF(prob, root, rhs_list):
     rules = []
     # find rhs1 amd rhs2
@@ -25,7 +29,7 @@ def CNF(prob, root, rhs_list):
 def CNF_grammer_list(grammer):
     grammer_list = []
     for production in grammer.productions():
-        print(production)
+        # print(production)
         if type(production.rhs()[0]) is nltk.grammar.Nonterminal and len(production.rhs()) == 2:
             rule = Rule(production.prob(), str(production.lhs()), str(production.rhs()[0]), str(production.rhs()[1]))
             grammer_list.append(rule)
@@ -81,8 +85,14 @@ class Traceback():
 
 def CKY(line, grammer_list):
     words = word_tokenize(line)
+    fail = False
+    for word in words:
+        if word not in VOCABULARY:
+            fail = True
+    if fail:
+        return None, None
     if words == []:
-        return None
+        return None, None
     table = []
     for i in range(len(words)):
         row = []
@@ -142,29 +152,37 @@ def find_traceback_rule(table, row, col, sent_length):
                         traceback_rules_list.append(traceback_Rule(rule, prob, traceback))
     return traceback_rules_list
 
-with open('grammer.pickle', 'rb') as handle:
+GrammarFile = "grammer.pickle"
+TestInputFile = "TestingRaw.txt"
+TextOutputFile = "TextOutput.txt"
+
+with open(GrammarFile, 'rb') as handle:
     grammer = pickle.load(handle)
 grammer_list = CNF_grammer_list(grammer)
 
-with open('TestingRaw.txt', 'r') as f:
-    testlines = f.readlines()
-    pred_results = []
-    for line in testlines:
-        if word_tokenize(line) == []:
-            tree = ""
-        else:
+with open(TextOutputFile, 'w') as out_f:
+    with open(TestInputFile, 'r') as f:
+        testlines = f.readlines()
+        pred_results = []
+        for line in testlines:
             table, length = CKY(line, grammer_list)
-            tree = traceback_table(table, length)
-        print(tree)
-        pred_results.append(tree)
+            if table == None:
+                tree = "FAIL"
+            else:
+                tree = traceback_table(table, length)
+            print(tree)
+            out_f.write(tree)
+            out_f.write('\n')
+            pred_results.append(tree)
 
-with open('TestingTree.txt', 'r') as f:
-    truetrees = f.readlines()
-    for i, item in enumerate(truetrees):
-        item = item.strip()
-        if pred_results[i] == item:
-            print(True)
-        else:
-            print(False)
+
+# with open('TestingTree.txt', 'r') as f:
+#     truetrees = f.readlines()
+#     for i, item in enumerate(truetrees):
+#         item = item.strip()
+#         if pred_results[i] == item:
+#             print(True)
+#         else:
+#             print(False)
         
     
