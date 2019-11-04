@@ -1,10 +1,7 @@
 import pickle
 import nltk
 from nltk import word_tokenize
-
-with open('Vocabulary.txt', 'r') as f:
-    voca_file = f.read()
-    VOCABULARY = word_tokenize(voca_file)
+import sys, os
 
 def CNF(prob, root, rhs_list):
     rules = []
@@ -86,11 +83,6 @@ class Traceback():
 def CKY(line, grammer_list):
     words = word_tokenize(line)
     fail = False
-    for word in words:
-        if word not in VOCABULARY:
-            fail = True
-    if fail:
-        return None, None
     if words == []:
         return None, None
     table = []
@@ -106,8 +98,13 @@ def CKY(line, grammer_list):
                 table[i][i].append(traceback_Rule(rule, rule.prob))
     for col in range(1, len(words)):
         for row in range(col - 1, -1, -1):
-            table[row][col].extend(find_traceback_rule(table, row, col, len(words)))
-    return table, len(words)
+            table[row][col].extend(find_traceback_rule(table, row, col, len(words), grammer_list))
+    if len(table[0][len(words)-1]) == 0:
+        fail = True
+    if fail:
+        return None, None
+    else:
+        return table, len(words)
 
 def traceback_table(table, length):
     best_tbrule = None
@@ -136,7 +133,7 @@ def print_tree(tbrule, table):
         output = '[' + tbrule.rule.root + ' ' + print_tree(tbrule1, table) + ' ' + print_tree(tbrule2, table) + ']'
     return output
 
-def find_traceback_rule(table, row, col, sent_length):
+def find_traceback_rule(table, row, col, sent_length, grammer_list):
     traceback_rules_list = []
     for i in range(col - row):
         block1 = table[row][row + i]
@@ -152,37 +149,40 @@ def find_traceback_rule(table, row, col, sent_length):
                         traceback_rules_list.append(traceback_Rule(rule, prob, traceback))
     return traceback_rules_list
 
-GrammarFile = "grammer.pickle"
-TestInputFile = "TestingRaw.txt"
-TextOutputFile = "TextOutput.txt"
+def main(argv):
+    # GrammarFile = "grammer.pickle"
+    # TestInputFile = "TestingRaw.txt"
+    # TextOutputFile = "TextOutput.txt"
+    TestInputFile, GrammarFile, TextOutputFile = argv[1], argv[2], argv[3]
 
-with open(GrammarFile, 'rb') as handle:
-    grammer = pickle.load(handle)
-grammer_list = CNF_grammer_list(grammer)
+    with open(GrammarFile, 'rb') as handle:
+        grammer = pickle.load(handle)
+    grammer_list = CNF_grammer_list(grammer)
 
-with open(TextOutputFile, 'w') as out_f:
-    with open(TestInputFile, 'r') as f:
-        testlines = f.readlines()
-        pred_results = []
-        for line in testlines:
-            table, length = CKY(line, grammer_list)
-            if table == None:
-                tree = "FAIL"
-            else:
-                tree = traceback_table(table, length)
-            print(tree)
-            out_f.write(tree)
-            out_f.write('\n')
-            pred_results.append(tree)
+    with open(TextOutputFile, 'w') as out_f:
+        with open(TestInputFile, 'r') as f:
+            testlines = f.readlines()
+            pred_results = []
+            for line in testlines:
+                table, length = CKY(line, grammer_list)
+                if table == None:
+                    tree = "FAIL"
+                else:
+                    tree = traceback_table(table, length)
+                print(tree)
+                out_f.write(tree)
+                out_f.write('\n')
+                pred_results.append(tree)
 
 
-# with open('TestingTree.txt', 'r') as f:
-#     truetrees = f.readlines()
-#     for i, item in enumerate(truetrees):
-#         item = item.strip()
-#         if pred_results[i] == item:
-#             print(True)
-#         else:
-#             print(False)
-        
-    
+    # with open('TestingTree.txt', 'r') as f:
+    #     truetrees = f.readlines()
+    #     for i, item in enumerate(truetrees):
+    #         item = item.strip()
+    #         if pred_results[i] == item:
+    #             print(True)
+    #         else:
+    #             print(False)
+
+if __name__ == "__main__":
+    main(sys.argv)
